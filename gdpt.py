@@ -3,7 +3,7 @@ import tkinter.messagebox as messagebox
 import requests
 from html.parser import HTMLParser
 import os
-
+from config import cookies
 
 class Application(Frame):
     def __init__(self, master=None):
@@ -112,11 +112,7 @@ class MyUrlConnect:
     searchUrl = 'http://pt.gdut.edu.cn/torrents.php?notnewword=1&search='
     selectUrl = 'http://pt.gdut.edu.cn/torrents.php?'
     downloadUrl = 'http://pt.gdut.edu.cn/download.php?id='
-    cookies = {'c_secure_login': 'bm9wZQ%3D%3D',
-               'c_secure_pass': '4823182438a4c337f72a62a84f2518e1',
-               'c_secure_ssl': 'bm9wZQ%3D%3D',
-               'c_secure_tracker_ssl': 'bm9wZQ%3D%3D',
-               'c_secure_uid': 'NzI2Nw%3D%3D'}
+    cookies = cookies
 
     def connectNormalUrl(self, attr):
         r = requests.get(self.normalUrl + str(attr), cookies=self.cookies)
