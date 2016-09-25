@@ -2,6 +2,7 @@ from tkinter import *
 import tkinter.messagebox as messagebox
 import requests
 from html.parser import HTMLParser
+import os
 
 
 class Application(Frame):
@@ -45,10 +46,10 @@ class Application(Frame):
         self.listBox.bind('<Double-Button-1>', printList)
         self.listBox.grid(row=2, column=0, columnspan=4, padx=45)
         # 刷新按钮
-        self.flashBtn = Button(self, text='刷新', command=self.quit)
-        self.flashBtn.grid(row=3, column=0, sticky=W + E + N + S, padx=45, pady=10)
+        # self.flashBtn = Button(self, text='刷新', command=self.quit)
+        # self.flashBtn.grid(row=3, column=0, sticky=W + E + N + S, padx=45, pady=10)
         # 退出按钮
-        self.quitBtn = Button(self, text='离开', command=self.quit)
+        self.quitBtn = Button(self, text='离开', command=cleanAndQuit)
         self.quitBtn.grid(row=3, column=3, sticky=W + E + N + S, padx=45, pady=10)
 
     def clearListBox(self):
@@ -60,7 +61,6 @@ class Application(Frame):
             app.listBox.insert(END, data[i])
             if not i % 2:
                 app.listBox.itemconfig(i, bg='#f0f0ff')
-
 
 
 class MyHTMLParser(HTMLParser):
@@ -107,10 +107,11 @@ class MyData():
         self.dataID = None
 
 
-class MyUrlConnect():
+class MyUrlConnect:
     normalUrl = 'http://pt.gdut.edu.cn/torrents.php?inclbookmarked=0&picktype=0&incldead=1&spstate=0&page='
     searchUrl = 'http://pt.gdut.edu.cn/torrents.php?notnewword=1&search='
     selectUrl = 'http://pt.gdut.edu.cn/torrents.php?'
+    downloadUrl = 'http://pt.gdut.edu.cn/download.php?id='
     cookies = {'c_secure_login': 'bm9wZQ%3D%3D',
                'c_secure_pass': '4823182438a4c337f72a62a84f2518e1',
                'c_secure_ssl': 'bm9wZQ%3D%3D',
@@ -118,7 +119,7 @@ class MyUrlConnect():
                'c_secure_uid': 'NzI2Nw%3D%3D'}
 
     def connectNormalUrl(self, attr):
-        r = requests.get(self.normalUrl+str(attr), cookies=self.cookies)
+        r = requests.get(self.normalUrl + str(attr), cookies=self.cookies)
         r.encoding = 'utf-8'
         return r
 
@@ -141,10 +142,22 @@ class MyUrlConnect():
         r.encoding = 'utf-8'
         return r
 
+    def connectDownloadUrl(self, id):
+        r = requests.get(self.downloadUrl + str(id), cookies=self.cookies)
+        with open('download/[GDPT]' + str(id) + '.torrent', 'wb') as code:
+            code.write(r.content)
+
+
 def printList(event):
     # TODO：弹出窗口，确认，下载资源种子，调用系统 utorrent
     print('s:', app.listBox.get(app.listBox.curselection()))
     print('id:', result.dataID[app.listBox.curselection()[0]])
+    torrentID = result.dataID[app.listBox.curselection()[0]]
+    # 下载种子
+    connection.connectDownloadUrl(torrentID)
+    # 系统打开种子
+    os.system(os.getcwd() + '\\download\\' + '[GDPT]' + str(torrentID) + '.torrent')
+
 
 def searchKey():
     # 关键字搜索
@@ -163,12 +176,23 @@ def searchKey():
 
 def printCheckButton():
     # 筛选搜索
-    selectText = connection.connectSelectUrl(app.movieCheckVar.get(),app.tvCheckVar.get(),app.cartoonCheckVar.get(),app.showCheckVar.get())
+    selectText = connection.connectSelectUrl(app.movieCheckVar.get(), app.tvCheckVar.get(), app.cartoonCheckVar.get(),
+                                             app.showCheckVar.get())
     selectParser = MyHTMLParser()
     selectParser.feed(selectText.text)
     result.dataID = selectParser.dataID
     result.dataCH = selectParser.dataCH
     app.flashListBox(result.dataCH)
+
+def cleanAndQuit():
+    # 清除种子残留并退出
+    currentPath = os.getcwd()+'\\download\\'
+    fileList = os.listdir(currentPath)
+    for fileName in fileList:
+        print(fileName)
+        if re.match('^\[GDPT\][0-9]*\.torrent$', fileName) is not None:
+            os.remove(currentPath+fileName)
+    exit()
 
 app = Application()
 app.master.title('GDPT内网获取器')
@@ -186,7 +210,6 @@ result.dataID = parser.dataID
 result.dataCH = parser.dataCH
 
 app.flashListBox(result.dataCH)
-
 
 # 主消息循环:
 app.mainloop()
