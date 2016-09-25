@@ -1,2 +1,4 @@
 .idea/
-config.js
+config.py
+app.py
+thframe.py
