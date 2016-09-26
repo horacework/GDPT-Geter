@@ -46,8 +46,8 @@ class Application(Frame):
         self.listBox.bind('<Double-Button-1>', printList)
         self.listBox.grid(row=2, column=0, columnspan=4, padx=45)
         # 刷新按钮
-        # self.flashBtn = Button(self, text='刷新', command=self.quit)
-        # self.flashBtn.grid(row=3, column=0, sticky=W + E + N + S, padx=45, pady=10)
+        self.flashBtn = Button(self, text='刷新', command=flashAndUpdate)
+        self.flashBtn.grid(row=3, column=0, sticky=W + E + N + S, padx=45, pady=10)
         # 退出按钮
         self.quitBtn = Button(self, text='离开', command=cleanAndQuit)
         self.quitBtn.grid(row=3, column=3, sticky=W + E + N + S, padx=45, pady=10)
@@ -56,11 +56,14 @@ class Application(Frame):
         self.listBox.delete(0, END)
 
     def flashListBox(self, data):
-        self.clearListBox()
-        for i in range(len(data)):
-            app.listBox.insert(END, data[i])
-            if not i % 2:
-                app.listBox.itemconfig(i, bg='#f0f0ff')
+        if len(data) != 0:
+            self.clearListBox()
+            for i in range(len(data)):
+                app.listBox.insert(END, data[i])
+                if not i % 2:
+                    app.listBox.itemconfig(i, bg='#f0f0ff')
+        else:
+            messagebox.showinfo('提示', '获取数据失败')
 
 
 class MyHTMLParser(HTMLParser):
@@ -145,7 +148,6 @@ class MyUrlConnect:
 
 
 def printList(event):
-    # TODO：弹出窗口，确认，下载资源种子，调用系统 utorrent
     print('s:', app.listBox.get(app.listBox.curselection()))
     print('id:', result.dataID[app.listBox.curselection()[0]])
     torrentID = result.dataID[app.listBox.curselection()[0]]
@@ -190,22 +192,38 @@ def cleanAndQuit():
             os.remove(currentPath+fileName)
     exit()
 
+def flashAndUpdate():
+    # 获取页面信息
+    f = connection.connectNormalUrl(0)
+    f.encoding = 'utf-8'
+    # 解析页面信息
+    flashParser = MyHTMLParser()
+    flashParser.feed(f.text)
+    # 存储页面信息
+    result.dataID = flashParser.dataID
+    result.dataCH = flashParser.dataCH
+    # 刷新控件上的信息
+    app.flashListBox(result.dataCH)
+
+
 app = Application()
 app.master.title('GDPT内网获取器')
 app.master.geometry('800x660')
 
 connection = MyUrlConnect()
-r = connection.connectNormalUrl(0)
-r.encoding = 'utf-8'
-
-parser = MyHTMLParser()
-parser.feed(r.text)
+# r = connection.connectNormalUrl(0)
+# r.encoding = 'utf-8'
+#
+# parser = MyHTMLParser()
+# parser.feed(r.text)
 
 result = MyData()
-result.dataID = parser.dataID
-result.dataCH = parser.dataCH
+# result.dataID = parser.dataID
+# result.dataCH = parser.dataCH
+#
+# app.flashListBox(result.dataCH)
 
-app.flashListBox(result.dataCH)
+flashAndUpdate()
 
 # 主消息循环:
 app.mainloop()
