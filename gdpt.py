@@ -4,11 +4,15 @@ import requests
 from html.parser import HTMLParser
 import os
 from config import cookies
+import PIL.Image
+import PIL.ImageTk
 
 class Application(Frame):
     def __init__(self, master=None):
         Frame.__init__(self, master)
-
+        # 主窗体大小，标题
+        self.master.title('GDPT内网获取器')
+        self.master.geometry('800x660')
         # checkButton控件的值
         self.movieCheckVar = IntVar()
         self.tvCheckVar = IntVar()
@@ -46,7 +50,7 @@ class Application(Frame):
         self.listBox.bind('<Double-Button-1>', printList)
         self.listBox.grid(row=2, column=0, columnspan=4, padx=45)
         # 刷新按钮
-        self.flashBtn = Button(self, text='刷新', command=flashAndUpdate)
+        self.flashBtn = Button(self, text='刷新', command=change)
         self.flashBtn.grid(row=3, column=0, sticky=W + E + N + S, padx=45, pady=10)
         # 退出按钮
         self.quitBtn = Button(self, text='离开', command=cleanAndQuit)
@@ -64,6 +68,56 @@ class Application(Frame):
                     app.listBox.itemconfig(i, bg='#f0f0ff')
         else:
             messagebox.showinfo('提示', '获取数据失败')
+
+    def hide(self):
+        self.master.withdraw()
+
+    def show(self):
+        self.master.update()
+        self.master.deiconify()
+
+    def openLogin(self):
+        self.hide()
+        subFrame = LoginFrame()
+
+
+class LoginFrame(Toplevel):
+    def __init__(self, master=None):
+        Toplevel.__init__(self, master)
+        # self.master.geometry('1200x300')
+        self.master.title('Login')
+
+        self.createWidgets()
+
+    def createWidgets(self):
+        Label(self, text="账号名：").grid(sticky=E)
+        Label(self, text="密码：").grid(sticky=E)
+        Label(self, text="验证码：").grid(sticky=E)
+
+        self.userInput = Entry(self)
+        self.userInput.grid(row=0, column=1)
+        self.passInput = Entry(self)
+        self.passInput.grid(row=1, column=1)
+        self.codeInput = Entry(self)
+        self.codeInput.grid(row=2, column=1)
+
+        im = PIL.Image.open('code.png')
+        photo = PIL.ImageTk.PhotoImage(im)
+        label = Label(self, image=photo)
+        label.image = photo
+        label.grid(row=0, column=2, columnspan=2, rowspan=2, sticky=W + E + N + S, padx=0, pady=0)
+
+        button1 = Button(self, text='登录', command=self.onClose)
+        button1.grid(row=3, column=2)
+
+        button2 = Button(self, text='退出', command=self.exitPro)
+        button2.grid(row=3, column=3)
+
+    def onClose(self):
+        self.destroy()
+
+    def exitPro(self):
+        quit()
 
 
 class MyHTMLParser(HTMLParser):
@@ -182,15 +236,17 @@ def printCheckButton():
     result.dataCH = selectParser.dataCH
     app.flashListBox(result.dataCH)
 
+
 def cleanAndQuit():
     # 清除种子残留并退出
-    currentPath = os.getcwd()+'\\download\\'
+    currentPath = os.getcwd() + '\\download\\'
     fileList = os.listdir(currentPath)
     for fileName in fileList:
         print(fileName)
         if re.match('^\[GDPT\][0-9]*\.torrent$', fileName) is not None:
-            os.remove(currentPath+fileName)
+            os.remove(currentPath + fileName)
     exit()
+
 
 def flashAndUpdate():
     # 获取页面信息
@@ -206,24 +262,48 @@ def flashAndUpdate():
     app.flashListBox(result.dataCH)
 
 
+def change():
+    tl = Toplevel()
+    # 设置tl的title
+    tl.title('hello Toplevel')
+    # 设置tl在宽和高
+    tl.geometry('400x300')
+    # 为了区别root和tl，我们向tl中添加了一个Label
+    Label(tl, text='hello label').pack()
+    Button(tl, text='xchange', command=app.show).pack()
+
+    app.hide()
+
+
 app = Application()
-app.master.title('GDPT内网获取器')
-app.master.geometry('800x660')
+
+result = MyData()
 
 connection = MyUrlConnect()
+# TODO 首先判断是否含有cookies信息，没有则登录，有就开始连接
+if True:
+    # 弹出登录窗口
+    app.openLogin()
+else:
+    # 直接使用cookies获取资源
+    flashAndUpdate()
+
+# TODO 其次判断连接是否成功
+
+
 # r = connection.connectNormalUrl(0)
 # r.encoding = 'utf-8'
 #
 # parser = MyHTMLParser()
 # parser.feed(r.text)
 
-result = MyData()
+
 # result.dataID = parser.dataID
 # result.dataCH = parser.dataCH
 #
 # app.flashListBox(result.dataCH)
 
-flashAndUpdate()
+
 
 # 主消息循环:
 app.mainloop()
