@@ -13,6 +13,9 @@ GDPT内网资源获取器
 * 登录获取cookies功能
 
 **使用方法：**（暂时）
-1. 将config-example.py重命名为config.py
-2. 补全config.py内cookies信息
-3. 运行gdpt.py
+
+* 将config-example.py重命名为config.py
+
+* 补全config.py内cookies信息
+
+* 运行gdpt.py
