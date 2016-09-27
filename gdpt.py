@@ -3,9 +3,11 @@ import tkinter.messagebox as messagebox
 import requests
 from html.parser import HTMLParser
 import os
-from config import cookies
+# from config import cookies
 import PIL.Image
 import PIL.ImageTk
+import json
+
 
 class Application(Frame):
     def __init__(self, master=None):
@@ -85,9 +87,13 @@ class LoginFrame(Toplevel):
     def __init__(self, master=None):
         Toplevel.__init__(self, master)
         # self.master.geometry('1200x300')
+        self.session = requests.session()
+
         self.master.title('Login')
 
         self.createWidgets()
+
+
 
     def createWidgets(self):
         Label(self, text="账号名：").grid(sticky=E)
@@ -107,17 +113,33 @@ class LoginFrame(Toplevel):
         label.image = photo
         label.grid(row=0, column=2, columnspan=2, rowspan=2, sticky=W + E + N + S, padx=0, pady=0)
 
-        button1 = Button(self, text='登录', command=self.onClose)
+        button1 = Button(self, text='登录', command=self.getVCodeAndSessionId)
         button1.grid(row=3, column=2)
 
         button2 = Button(self, text='退出', command=self.exitPro)
         button2.grid(row=3, column=3)
 
-    def onClose(self):
-        self.destroy()
+    def loginAction(self):
+        userInfo = {
+            'account': self.userInput,
+            'passwd': self.passInput,
+            'vcode': self.codeInput
+        }
+        r = self.session.post('http://pt.gdut.edu.cn/v2/login/', userInfo)
+
+        print(r.text)
+
 
     def exitPro(self):
         quit()
+
+    def getVCodeAndSessionId(self):
+        # TODO 获取验证码png和当前sessionID
+        r = self.session.get('http://pt.gdut.edu.cn/v2/login/')
+        # kv = requests.utils.dict_from_cookiejar(r.cookies)
+        r.encoding = 'utf-8'
+        print(r.text)
+
 
 
 class MyHTMLParser(HTMLParser):
@@ -164,12 +186,14 @@ class MyData():
         self.dataID = None
 
 
-class MyUrlConnect:
-    normalUrl = 'http://pt.gdut.edu.cn/torrents.php?inclbookmarked=0&picktype=0&incldead=1&spstate=0&page='
-    searchUrl = 'http://pt.gdut.edu.cn/torrents.php?notnewword=1&search='
-    selectUrl = 'http://pt.gdut.edu.cn/torrents.php?'
-    downloadUrl = 'http://pt.gdut.edu.cn/download.php?id='
-    cookies = cookies
+class MyUrlConnect():
+
+    def __init__(self, cookiesConfig):
+        self.normalUrl = 'http://pt.gdut.edu.cn/torrents.php?inclbookmarked=0&picktype=0&incldead=1&spstate=0&page='
+        self.searchUrl = 'http://pt.gdut.edu.cn/torrents.php?notnewword=1&search='
+        self.selectUrl = 'http://pt.gdut.edu.cn/torrents.php?'
+        self.downloadUrl = 'http://pt.gdut.edu.cn/download.php?id='
+        self.cookies = cookiesConfig
 
     def connectNormalUrl(self, attr):
         r = requests.get(self.normalUrl + str(attr), cookies=self.cookies)
@@ -274,19 +298,36 @@ def change():
 
     app.hide()
 
+def loadJsonFile(filename):
+    # 读取json文件并返回json数组
+    with open(filename) as json_file:
+        data = json.load(json_file)
+        return data
 
 app = Application()
 
 result = MyData()
 
-connection = MyUrlConnect()
+
 # TODO 首先判断是否含有cookies信息，没有则登录，有就开始连接
-if True:
-    # 弹出登录窗口
+fileName = 'config.json'
+#if os.path.exists(fileName):
+if False:
+    data = loadJsonFile(fileName)
+    connection = MyUrlConnect(data)
+
+    flashAndUpdate()
+else:
+    # TODO 弹出登录窗口，获取cookies
     app.openLogin()
+if False:
+    # 弹出登录窗口
+    pass
+
 else:
     # 直接使用cookies获取资源
-    flashAndUpdate()
+    pass
+
 
 # TODO 其次判断连接是否成功
 
