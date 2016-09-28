@@ -1,6 +1,9 @@
 .idea/
 __pycache__/
 config.py
+config.json
 app.py
 tkframe.py
 login.py
+download/
+code.png

@@ -3,9 +3,11 @@ import tkinter.messagebox as messagebox
 import requests
 from html.parser import HTMLParser
 import os
+import io
 # from config import cookies
 import PIL.Image
 import PIL.ImageTk
+from urllib.request import urlopen
 import json
 
 
@@ -107,19 +109,29 @@ class LoginFrame(Toplevel):
         self.codeInput = Entry(self)
         self.codeInput.grid(row=2, column=1)
 
-        im = PIL.Image.open('code.png')
-        photo = PIL.ImageTk.PhotoImage(im)
-        label = Label(self, image=photo)
-        label.image = photo
+        # 获取验证码（网络）图片
+        vcodeStamp = self.getVCodeAndSessionId()
+        image_bytes = urlopen('http://pt.gdut.edu.cn'+vcodeStamp).read()
+        data_stream = io.BytesIO(image_bytes)
+        pil_image = PIL.Image.open(data_stream)
+        tk_image = PIL.ImageTk.PhotoImage(pil_image)
+
+        # im = PIL.Image.open('code.png')
+        # photo = PIL.ImageTk.PhotoImage(im)
+        label = Label(self, image=tk_image)
+        label.image = tk_image
         label.grid(row=0, column=2, columnspan=2, rowspan=2, sticky=W + E + N + S, padx=0, pady=0)
 
-        button1 = Button(self, text='登录', command=self.getVCodeAndSessionId)
+        button1 = Button(self, text='登录', command=self.loginAction)
         button1.grid(row=3, column=2)
 
         button2 = Button(self, text='退出', command=self.exitPro)
         button2.grid(row=3, column=3)
 
+
+
     def loginAction(self):
+        # 登录按钮
         userInfo = {
             'account': self.userInput,
             'passwd': self.passInput,
@@ -127,19 +139,25 @@ class LoginFrame(Toplevel):
         }
         r = self.session.post('http://pt.gdut.edu.cn/v2/login/', userInfo)
 
-        print(r.text)
+        kv = requests.utils.dict_from_cookiejar(r.cookies)
 
+        print(kv)
+
+        print(r.text)
 
     def exitPro(self):
         quit()
 
     def getVCodeAndSessionId(self):
-        # TODO 获取验证码png和当前sessionID
+        # 访问登录页面，返回验证码png链接
         r = self.session.get('http://pt.gdut.edu.cn/v2/login/')
         # kv = requests.utils.dict_from_cookiejar(r.cookies)
         r.encoding = 'utf-8'
-        print(r.text)
-
+        # print(r.text)
+        loginParser = MyHTMLParser()
+        loginParser.feed(r.text)
+        return loginParser.vCode
+        # http://pt.gdut.edu.cn/vcode.php?stamp=1475045916 44vl
 
 
 class MyHTMLParser(HTMLParser):
@@ -149,6 +167,7 @@ class MyHTMLParser(HTMLParser):
         self.titleReady = None
         self.dataCH = []
         self.dataID = []
+        self.vCode = ''
 
     def handle_starttag(self, tag, attrs):
         # print("start: ",tag)
@@ -168,6 +187,12 @@ class MyHTMLParser(HTMLParser):
 
         if self.inZfkdItem == 'inside' and tag == 'br':
             self.titleReady = 'checked'
+
+        # 获取验证码链接
+        if tag == 'img':
+            for kk, vv in attrs:
+                if kk == 'src' and re.search('vcode', vv):
+                    self.vCode = vv
 
     def handle_data(self, data):
         if self.inZfkdItem == 'inside' and self.titleReady == 'checked':
@@ -311,8 +336,10 @@ result = MyData()
 
 # TODO 首先判断是否含有cookies信息，没有则登录，有就开始连接
 fileName = 'config.json'
+
+# TODO 登录功能开发受阻,无法模拟正常登录
 #if os.path.exists(fileName):
-if False:
+if True:
     data = loadJsonFile(fileName)
     connection = MyUrlConnect(data)
 
@@ -320,14 +347,6 @@ if False:
 else:
     # TODO 弹出登录窗口，获取cookies
     app.openLogin()
-if False:
-    # 弹出登录窗口
-    pass
-
-else:
-    # 直接使用cookies获取资源
-    pass
-
 
 # TODO 其次判断连接是否成功
 

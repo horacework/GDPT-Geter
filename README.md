@@ -20,12 +20,15 @@ GDPT内网资源获取器
 
 * 登录获取cookies功能
 
+**注意** 登录功能开发受阻,无法模拟正常登录，多次试验皆被警告，为保实验室IP不被封，暂时不开发此功能
+
+
 **使用方法：**   （暂时）
 
 * 根据GDPT规定，安装 [uTorrent](http://www.utorrent.com/intl/zh/) 软件，并将设为系统默认打开.torrent文件的软件
 
-* 将config-example.py重命名为config.py
+* 将config-example.json重命名为config.json
 
-* 补全config.py内cookies信息
+* 补全config.json内cookies信息(在浏览器内登录一次，之后提取cookies)
 
-* 运行gdpt.py（运行环境：Python 3.5.0）
+* 运行gdpt.py（运行环境：Python 3.5.0，各类依赖库的安装请自理）
